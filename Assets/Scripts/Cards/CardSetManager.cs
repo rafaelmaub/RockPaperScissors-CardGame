@@ -24,14 +24,15 @@ public class CardSetManager : MonoBehaviour
     [SerializeField] private GameRules _currentRules;
     [SerializeField] private Character _player1;
     [SerializeField] private Character _player2;
-    [SerializeField] private GameObject _ui;
     [SerializeField] private int _currentRound;
 
     private float _currentRoundTimer;
     private bool _ongoingRound;
-    
+
     public CardData[] CardsDatabase => _currentRules._cardSet._Cards;
+
     [HideInInspector] public UnityEvent<float, bool> OnTimerChanged = new UnityEvent<float, bool>();
+    [HideInInspector] public UnityEvent<bool> OnGameStarted = new UnityEvent<bool>();
     private void Update()
     {
         if(_ongoingRound)
@@ -56,23 +57,28 @@ public class CardSetManager : MonoBehaviour
         _currentRound = 0;
         DistributeCards();
         StartRound();
-        _ui.SetActive(false);
+        OnGameStarted.Invoke(true);
     }
 
     void EndMatch(Character winner)
     {
-        _ui.SetActive(true);
+        OnGameStarted.Invoke(false);
         _currentRound = 0;
+
         winner.WinCelebration();
+
         _player1.ResetGame();
         _player2.ResetGame();
+
         Debug.Log("Final Winner is: " + winner.gameObject.name);
     }
     void StartRound()
     {
         Debug.Log("Starting Round");
+
         _player1.HideHand();
         _player2.HideHand();
+
         _currentRoundTimer = _currentRules._roundDuration;
         _ongoingRound = true;
     }
@@ -104,14 +110,14 @@ public class CardSetManager : MonoBehaviour
             else if (_player2Play._data.GetsBeatenBy(_player1Play._data)) winner = _player1;
         }
 
-        Debug.Log("AI Play: " + _player2Play._data._Name);
+        Debug.Log("AI Play was: " + _player2Play._data._Name);
 
         bool winnerAlready = false;
         if (winner)
         {
             _currentRound++;
             winner.AddWin();
-            Debug.Log("Winner: " + winner.gameObject.name);
+            Debug.Log("Round Winner: " + winner.gameObject.name);
             winnerAlready = (float)winner.amountOfWins > (float)_currentRules._bestOf / 2f;
         }
         else
